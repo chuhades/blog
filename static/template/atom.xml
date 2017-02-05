@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>Chu's BLoG</title>
+        <description>Talk is cheap, show me the shell.</description>
+        <link>http://sh3ll.me</link>
+        <atom:link href="http://sh3ll.me/atom.xml" rel="self" type="application/rss+xml" />
+        {{ range . }}
+        <item>
+            <title>{{ .Title }}</title>
+            <pubDate>{{ .Published }}</pubDate>
+            <link>{{ .Link }}</link>
+            <guid isPermaLink="true">{{ .Link }}</guid>
+        </item>
+
+        {{ end }}
+    </channel>
+</rss>

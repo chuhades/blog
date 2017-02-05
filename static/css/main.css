@@ -1,0 +1,296 @@
+body {
+    background: rgba(0, 0, 0, 0.3);
+    color: #000000;
+    font-size: 10pt;
+    font-family: monospace;
+    font: 80% "monospace";
+}
+
+pre {
+    padding: 5px;
+    margin-bottom: 10px !important;
+    margin-left: 20px;
+    margin-right: 20px;
+    font-size: 11px;
+    overflow: auto;
+    clear: right;
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap;
+    white-space: -pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
+}
+
+/* General & 'Reset' Stuff */
+div.site {
+    padding: .4em .4em .4em .4em;
+    font-family: Trebuchet, Verdana, Lucida Sans, Helvetica, sans-serif;
+    width: 700px;
+    border: 3px solid black;
+    background-color: #ffffff;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 15px;
+}
+
+.container {
+    padding: 5px;
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto;
+    word-wrap: break-word;
+}
+
+.container>h4 {
+    margin-bottom: 0px;
+    margin-top: 0px;
+    background-color: #e0e0e0;
+}
+
+.container a {
+    text-decoration: none;
+    border-bottom: 1px dashed #000000;
+}
+
+section {
+    display: block;
+    margin: 0 0 20px 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 20px 0 20px;
+    margin-right: 5px;
+}
+
+.container > h1, h2 {
+    margin: 10px 0 0;
+    font-weight: bold;
+}
+
+li {
+    line-height: 1.4 ;
+}
+
+/* Header, <header>
+   header   - container
+   h1       - project name
+   h2       - project description
+*/
+
+header {
+    border: 1px solid black;
+    padding: 0em 0em 0em 0em;
+    margin: .2em .2em .2em .2em;
+    height: 110px;
+    background: #020204;
+}
+
+header h1 {
+    color: #ffffff;
+    vertical-align: middle;
+    text-align: center;
+    margin-top: 36px;
+    font-size: 24pt;
+}
+
+header h2 {
+    color: #ffffff;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 10pt;
+}
+
+div#navigation {
+    clear: both;
+    margin: .2em .2em .2em .2em;
+    padding: 0px 0px 0px 0px;
+    height: 25px;
+    border-style: solid;
+    border-width: 0px;
+    border-color: red;
+    display: block;
+}
+
+div#navigation ul {
+    width: 700px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+div#navigation ul li {
+    width: 230px;
+    float: left;
+    margin: 2px 2px 0px 0px;
+    padding: 0px 0px 0px 0px;
+    background: #070c22;
+    text-align: center;
+    vertical-align: top;
+    height: 20px;
+}
+
+div#navigation ul li a {
+    margin: 2px 0 0 0;
+    padding: 0;
+    font-size: 12px;
+    color: #FFFFFF;
+    text-decoration: none;
+    text-transform: uppercase;
+    height: 20px;
+    display: block;
+}
+
+#downloads .btn {
+    display: inline-block;
+    text-align: center;
+    margin: 0;
+}
+
+/* Main Content
+*/
+
+#main_content {
+    width: 100%;
+    -webkit-font-smoothing: antialiased;
+}
+section img {
+    max-width: 100%
+}
+img {
+    max-width: 99%;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: normal;
+    font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
+    letter-spacing: -0.03em;
+}
+
+#main_content h1 {
+    font-size: 30px;
+}
+
+#main_content h2 {
+    font-size: 24px;
+}
+
+#main_content h3 {
+    font-size: 18px;
+}
+
+#main_content h4 {
+    font-size: 14px;
+}
+
+#main_content h5 {
+    font-size: 12px;
+    text-transform: uppercase;
+    margin: 0 0 5px 0;
+}
+
+#main_content h6 {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #999;
+    margin: 0 0 5px 0;
+}
+
+dt {
+    font-style: italic;
+    font-weight: bold;
+}
+
+blockquote {
+    color: #aaa;
+    padding-left: 10px;
+    border-left: 1px dotted #666;
+    margin-left: 25px;
+}
+
+table {
+    width: 100%;
+    margin: 0 0 20px 0;
+}
+
+th {
+    text-align: left;
+    border-bottom: 1px dashed #b5e853;
+    padding: 5px 10px;
+}
+
+td {
+    padding: 5px 10px;
+}
+
+div#footer {
+    margin: .2em .2em .2em .2em;
+    padding: .4em .4em .4em .4em;
+    border: 0px solid red;
+    font-style: italic;
+    font-size: 8pt;
+    text-align: right;
+}
+
+/* Buttons
+*/
+
+.btn {
+    display: inline-block;
+    background: -webkit-linear-gradient(top, rgba(40, 40, 40, 0.3), rgba(35, 35, 35, 0.3) 50%, rgba(10, 10, 10, 0.3) 50%, rgba(0, 0, 0, 0.3));
+    padding: 8px 18px;
+    border-radius: 50px;
+    border: 2px solid rgba(0, 0, 0, 0.7);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.7);
+    border-top: 2px solid rgba(0, 0, 0, 1);
+    color: rgba(255, 255, 255, 0.8);
+    font-family: Helvetica, Arial, sans-serif;
+    font-weight: bold;
+    font-size: 13px;
+    text-decoration: none;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.75);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.btn:hover {
+    background: -webkit-linear-gradient(top, rgba(40, 40, 40, 0.6), rgba(35, 35, 35, 0.6) 50%, rgba(10, 10, 10, 0.8) 50%, rgba(0, 0, 0, 0.8));
+}
+
+.btn .icon {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    margin: 1px 8px 0 0;
+    float: left;
+}
+
+.btn-github .icon {
+    opacity: 0.6;
+    background: url("../images/blacktocat.png") 0 0 no-repeat;
+}
+
+/* Links
+   a, a:hover, a:visited
+*/
+
+a:visited {
+    color: #000000;
+}
+a:link {
+    color: #000000;
+    text-decoration: none;
+}
+
+/* Clearfix */
+
+.cf:before, .cf:after {
+    content:"";
+    display:table;
+}
+
+.cf:after {
+    clear:both;
+}
+
+.cf {
+    zoom:1;
+}

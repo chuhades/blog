@@ -1,0 +1,42 @@
+{{ define "header" }}
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>Chu's BLoG</title>
+        <meta name="description" content="Chu's BLoG - Talk is cheap, show me the shell."/>
+        <link rel="shortcut icon" href="/image/favicon.ico"/>
+        <link rel="bookmark" href="/image/favicon.ico"/>
+        <link rel="stylesheet" href="/css/main.css" type="text/css" />
+        <link rel="stylesheet" href="/css/syntax.css" type="text/css" />
+        <link rel="alternate" type="application/rss+xml" title="Chu's BLoG" href="http://sh3ll.me/feed">
+    </head>
+    <body>
+        <div class="site">
+            <header>
+                <!--<a href="/" style="text-decoration: none;">-->
+                    <h1>Chu's BLoG</h1>
+                    <h2>Talk is cheap, show me the shell.</h2>
+                <!--</a>-->
+            </header>
+
+            <div id="navigation">
+                <ul>
+                    <li id="archives"><a href="/">Archives</a></li>
+                    <li id="about"><a href="/about">About</a></li>
+                    <li id="feed"><a href="/atom.xml" target="_blank">RSS</a></li>
+                </ul>
+            </div>
+
+            <div class="container">
+                <style>
+                    ul {
+                        margin: 5px;
+                        list-style-type: square;
+                    }
+
+                    ul li {
+                        padding: .2em .2em .2em .2em;
+                        margin-left: -26px;
+                    }
+                </style>
+{{ end }}

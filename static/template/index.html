@@ -1,0 +1,13 @@
+{{ define "content" }}
+{{ template "header" }}
+            {{ range .}}
+            <ul class="post-list-ul">
+                <li>
+                    <span>{{ .Published }}</span>
+                    <span class="seperator">~</span>
+                    <a href="{{ .Link }}" style="border-bottom:0px;">{{ .Title }}</a>
+                </li>
+            </ul>
+            {{ end }}
+{{ template "footer" }}
+{{ end }}
