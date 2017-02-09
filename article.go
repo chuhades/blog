@@ -7,14 +7,12 @@ import (
 	"sort"
 	"strings"
 	"sync"
-	"time"
 )
 
 var cache = struct {
 	mutex       sync.RWMutex
-	time        time.Time
 	allArticles ArticleSlice
-}{sync.RWMutex{}, time.Now(), ArticleSlice{}}
+}{sync.RWMutex{}, ArticleSlice{}}
 
 type Article struct {
 	Title     string
@@ -46,17 +44,25 @@ func getAllArticles() ArticleSlice {
 }
 
 func walkArchives() {
-	cache.mutex.Lock()
-	defer cache.mutex.Unlock()
-
+	wg := sync.WaitGroup{}
 	cache.allArticles = ArticleSlice{}
+
 	filepath.Walk("archives", func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
-			cache.allArticles = append(cache.allArticles, parseArticleInfo(path))
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				articleInfo := parseArticleInfo(path)
+				cache.mutex.Lock()
+				defer cache.mutex.Unlock()
+				cache.allArticles = append(cache.allArticles, articleInfo)
+			}()
+
 		}
 		return err
 	})
-	cache.time = time.Now()
+	wg.Wait()
+
 	sort.Sort(cache.allArticles)
 }
 

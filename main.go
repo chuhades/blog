@@ -24,7 +24,7 @@ func init() {
 		}
 		defer watcher.Close()
 
-		// FIXME 此 goroutine 不会自动推出，资源泄漏
+		// FIXME 此 goroutine 不会自动退出，资源泄漏
 		for {
 			select {
 			case <-watcher.Event:
