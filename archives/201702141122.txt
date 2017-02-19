@@ -1,0 +1,113 @@
+- Title: pwnable.kr 刷题
+- Link: http://sh3ll.me/archives/201702141122.txt
+- Published: 2017-02-14 11:22
+- Updated: 2017-02-17 17:16
+
+lotto - 2 pt
+
+	// generate lotto numbers
+	int fd = open("/dev/urandom", O_RDONLY);
+	if(fd==-1){
+		printf("error. tell admin\n");
+		exit(-1);
+	}
+	unsigned char lotto[6];
+	if(read(fd, lotto, 6) != 6){
+		printf("error2. tell admin\n");
+		exit(-1);
+	}
+	for(i=0; i<6; i++){
+		lotto[i] = (lotto[i] % 45) + 1;		// 1 ~ 45
+	}
+	close(fd);
+	
+	// calculate lotto score
+	int match = 0, j = 0;
+	for(i=0; i<6; i++){
+		for(j=0; j<6; j++){
+			// bug
+			if(lotto[i] == submit[j]){
+				match++;
+			}
+		}
+	}
+
+	// win!
+	if(match == 6){
+		system("/bin/cat flag");
+	}
+
+数字从 /dev/urandom 读入，范围是 1 ~ 45。而判断的过程是进行了两次 for 循环，这样成功的概率还是很大的。用 1 ~ 45 中的可
+显字符（33 ~ 45）测试几次就出来了：
+
+➜  pwnable/lotto ./lotto 
+- Select Menu -
+1. Play Lotto
+2. Help
+3. Exit
+1
+Submit your 6 lotto bytes : ------
+Lotto Start!
+bad luck...
+- Select Menu -
+1. Play Lotto
+2. Help
+3. Exit
+1   
+Submit your 6 lotto bytes : ------
+Lotto Start!
+bad luck...
+- Select Menu -
+1. Play Lotto
+2. Help
+3. Exit
+1
+Submit your 6 lotto bytes : ------
+Lotto Start!
+sorry mom... I FORGOT to check duplicate numbers... :(
+- Select Menu -
+1. Play Lotto
+2. Help
+3. Exit
+
+codemap - 10 pt
+
+题目连续申请 1000 块 heap chunk，每次大小随机，目的为找出最大的三个块。程序结束后会输出最大的块及其内容，更新最大块的
+逻辑在 0x00BD3E62 ~ 0x00BD3E6A：
+
+.text:00BD3E62                 cmp     eax, [ebp+biggestChunkSize] ; eax => current chunk size
+.text:00BD3E65                 jbe     short loc_BD3E6D
+.text:00BD3E67                 mov     [ebp+biggestChunkSize], eax
+.text:00BD3E6A                 mov     [ebp+var_60], ebx ; ebx => current chunk content
+
+编写 IDA Python 脚本，在 0x00BD3E65 处下断，触发断点时读取 eax 和 ebx 的值即可解题：
+
+from idaapi import *
+from idc import *
+
+chunks = {}
+
+class DumpHook(DBG_Hooks):
+    def dbg_bpt (self,tid,ea):
+        size = GetRegValue("eax")
+        ptr = GetRegValue("ebx")
+        content = dbg_read_memory(ptr, 15)
+        chunks[size] = content
+        print size, hex(ptr), content
+        return 0
+
+try:
+    if debugger:
+        print "Removing previous hook ..."
+        debugger.unhook()
+except:
+    pass
+
+AddBpt(0x00033E65)
+SetBptAttr(0x00033E65, BPTATTR_FLAGS, BPT_ENABLED|BPT_TRACE)
+print "[*] set hook OK..."
+
+debugger = DumpHook()
+debugger.hook()
+
+# print sorted(chunks.iteritems(), key=lambda d:d[0])[:-10:-1]
