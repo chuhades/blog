@@ -67,6 +67,7 @@ func walkArchives() {
 }
 
 func parseArticleInfo(path string) *Article {
+	// FIXME 不符合规则的文档
 	line := []byte{}
 	article := &Article{}
 
