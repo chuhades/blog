@@ -1,0 +1,131 @@
+- Title: Struts2 框架执行流程
+- Link: http://sh3ll.me/archives/201703141928.txt
+- Published: 2017-03-14 19:28
+- Updated: 2017-03-14 19:28
+
+1. 容器（Tomcat）接收到用户发送的请求：http://sh3ll.local/demo.action，选择处理该请求的应用。
+
+2. 容器读取应用的 web.xml，在其中查找 filter-mapping，根据 Filter 的配置找到 org.apache.struts2.dispatcher.FilterDispatcher，
+回调 doFilter 方法，进行真正的处理。
+
+3. FilterDispatcher 将请求转发给 ActionMapper，ActionMapper 负责判断当前请求是否需要 Struts2 进行处理 struts2-core-2.0.6.jar!/org/apache/struts2/dispatcher/FilterDispatcher.class：
+
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+        ... snip ...
+
+        try {
+            UtilTimerStack.push(timerKey);
+            request = this.prepareDispatcherAndWrapRequest(request, response);
+
+            ActionMapping mapping;
+            try {
+                mapping = actionMapper.getMapping(request, this.dispatcher.getConfigurationManager());
+            } catch (Exception var20) {
+                LOG.error("error getting ActionMapping", var20);
+                this.dispatcher.sendError(request, response, servletContext, 500, var20);
+                ActionContextCleanUp.cleanUp(req);
+                return;
+            }
+
+            if(mapping == null) {
+                ... snip ...
+                if(serveStatic && resourcePath.startsWith("/struts")) {
+                // Struts2 静态资源
+                    String name = resourcePath.substring("/struts".length());
+                    this.findStaticResource(name, request, response);
+                } else {
+                    // 不需要 Struts2 处理，继续上层调用链处理
+                    chain.doFilter(request, response);
+                }
+            } else {
+                try {
+                    // 通知 FilterDispatcher 处理此请求
+                    this.dispatcher.serviceAction(request, response, servletContext, mapping);
+                } finally {
+                    ActionContextCleanUp.cleanUp(req);
+                }
+            }
+        ... snip ...
+    }
+
+4. 创建 ActionProxy 实例，作为 Action 与 xwork 的中间层，代理 Action 的运行过程 struts2-core-2.0.6.jar!/org/apache/struts2/dispatcher/Dispatcher.class：
+
+    public void serviceAction(HttpServletRequest request, HttpServletResponse response, ServletContext context, ActionMapping mapping) throws ServletException {
+        ... snip ...
+        try {
+            ... snip ...
+            String method = mapping.getMethod();
+            // 读取配置文件获取具体 Action
+            Configuration config = this.configurationManager.getConfiguration();
+            ActionProxy proxy = ((ActionProxyFactory)config.getContainer().getInstance(ActionProxyFactory.class)).createActionProxy(e, name, extraContext, true, false);
+            proxy.setMethod(method);
+            request.setAttribute("struts.valueStack", proxy.getInvocation().getStack());
+            if(mapping.getResult() != null) {
+                Result result = mapping.getResult();
+                result.execute(proxy.getInvocation());
+            } else {
+                proxy.execute();
+            }
+
+        ... snip ...
+    }
+    
+5. 创建 ActionInvocation 对象并进行调用。在调用用户层代码的前后要进行拦截器的调用（前后顺序相反） xwork-2.0.1.jar!/com/opensymphony/xwork2/DefaultActionInvocation.class：
+
+    public String invoke() throws Exception {
+        String profileKey = "invoke: ";
+
+        String iterator2;
+        try {
+            UtilTimerStack.push(profileKey);
+            if(this.executed) {
+                throw new IllegalStateException("Action has already executed");
+            }
+
+            if(this.interceptors.hasNext()) {
+                final InterceptorMapping iterator = (InterceptorMapping)this.interceptors.next();
+                UtilTimerStack.profile("interceptor: " + iterator.getName(), new ProfilingBlock() {
+                    public String doProfiling() throws Exception {
+                        DefaultActionInvocation.this.resultCode = iterator.getInterceptor().intercept(DefaultActionInvocation.this);
+                        return null;
+                    }
+                });
+            } else {
+                this.resultCode = this.invokeActionOnly();
+            }
+
+            if(!this.executed) {
+                if(this.preResultListeners != null) {
+                    Iterator iterator1 = this.preResultListeners.iterator();
+
+                    while(iterator1.hasNext()) {
+                        PreResultListener listener = (PreResultListener)iterator1.next();
+                        String _profileKey = "preResultListener: ";
+
+                        try {
+                            UtilTimerStack.push(_profileKey);
+                            listener.beforeResult(this, this.resultCode);
+                        } finally {
+                            UtilTimerStack.pop(_profileKey);
+                        }
+                    }
+                }
+
+                if(this.proxy.getExecuteResult()) {
+                    this.executeResult();
+                }
+
+                this.executed = true;
+            }
+
+            iterator2 = this.resultCode;
+        } finally {
+            UtilTimerStack.pop(profileKey);
+        }
+
+        return iterator2;
+    }
+
+6. 调用用户层代码 Action 的 execute 方法，根据其返回结果去配置文件中选择结果页面（view 层）进行渲染，生成最终页面。
+
+7. ActionInvocation 对象执行完毕后，将得到的响应对象展示给客户端。
