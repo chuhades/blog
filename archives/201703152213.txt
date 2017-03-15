@@ -183,4 +183,3 @@
 As of XWork 2.0.4, the OGNL parsing is changed so that it is not recursive. Therefore, in the example above, the result 
 will be the expected %{1+1}. You can either obtain the WebWork 2.0.4 or Struts 2.0.9, which contains the corrected XWork 
 library. Alternatively, you can obtain the patch and apply it to the XWork source code yourself.
-
