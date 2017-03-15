@@ -1,0 +1,186 @@
+- Title: S2-001 调试分析
+- Link: http://sh3ll.me/archives/201703152213.txt
+- Published: 2017-03-15 22:13
+- Updated: 2017-03-15 22:13
+
+应用中的认证函数添加错误：ActionSupport.addFieldError：
+
+    public void validate() {
+        if (username == null || username.trim().equals("")) {
+            addFieldError("username", "UserName is required");
+        }
+        if (phoneNumber == null || phoneNumber.trim().equals("")) {
+            addFieldError("phoneNumber", "PhoneNumber is required");
+        }
+    }
+
+判断是否验证失败：
+
+            // xwork-2.0.1.jar!/com/opensymphony/xwork2/interceptor/DefaultWorkflowInterceptor.class：
+			... snip ...
+			// 是否验证失败
+            if(validationAwareAction1.hasErrors()) {
+                if(_log.isDebugEnabled()) {
+                    _log.debug("Errors on action " + validationAwareAction1 + ", returning result name \'input\'");
+                }
+
+                return this.inputResultName;
+            }
+
+经过过滤器后进入到页面渲染，由外至内解析标签（form=>textfield=>submit）：
+
+    // struts2-core-2.0.6.jar!/org/apache/struts2/views/jsp/ComponentTagSupport.class：
+    public int doEndTag() throws JspException {
+        this.component.end(this.pageContext.getOut(), this.getBody());
+        this.component = null;
+        return 6;
+    }
+
+    public int doStartTag() throws JspException {
+        this.component = this.getBean(this.getStack(), (HttpServletRequest)this.pageContext.getRequest(), (HttpServletResponse)this.pageContext.getResponse());
+        Container container = Dispatcher.getInstance().getContainer();
+        container.inject(this.component);
+        this.populateParams();
+        boolean evalBody = this.component.start(this.pageContext.getOut());
+        return evalBody?(this.component.usesBody()?2:1):0;
+    }
+
+首先执行 doStartTag，标签闭合时执行 doEndTag，调试发现经过 doEndTag 后 Payload 得以执行，跟进之，随后跟进至 component.end：
+
+    // struts2-core-2.0.6.jar!/org/apache/struts2/components/UIBean.class：
+    public boolean end(Writer writer, String body) {
+        this.evaluateParams();	// 遍历标签属性
+
+        try {
+            super.end(writer, body, false);
+            this.mergeTemplate(writer, this.buildTemplateName(this.template, this.getDefaultTemplate()));
+        } catch (Exception var7) {
+            LOG.error("error when rendering", var7);
+        } finally {
+            this.popComponentStack();
+        }
+
+        return false;
+    }
+
+跟进 evaluateParams：
+
+    public void evaluateParams() {
+        ... snip ...
+        if(this.name != null) {
+            name = this.findString(this.name);  // 查询标签 name
+            this.addParameter("name", name);
+        }
+
+        // 添加标签值至参数列表，供错误页面显示
+        if(this.parameters.containsKey("value")) {
+            this.parameters.put("nameValue", this.parameters.get("value"));
+        } else if(this.evaluateNameValue()) {   // 是否取出标签的值，函数返回 true
+            Class form = this.getValueClassType();
+            if(form != null) {
+                if(this.value != null) {
+                    this.addParameter("nameValue", this.findValue(this.value, form));
+                } else if(name != null) {
+                    String tooltipConfigMap = name;
+                    if(this.altSyntax()) {  // 若开启 altSyntax，拼接查询语句
+                                            // altSyntax 属性指定是否允许在 Struts2 标签中使用表达式语法，默认值是true
+                        tooltipConfigMap = "%{" + name + "}";
+                    }
+
+                    this.addParameter("nameValue", this.findValue(tooltipConfigMap, form)); // 查询并添加结果至参数列表
+                                                                                            // 查询语句为 %{name}
+                }
+            } else if(this.value != null) {
+                this.addParameter("nameValue", this.findValue(this.value));
+            } else if(name != null) {
+                this.addParameter("nameValue", this.findValue(name));
+            }
+        }
+    ... snip ...
+    }
+
+跟进 findValue：
+
+    // struts2-core-2.0.6.jar!/org/apache/struts2/components/Component.class：
+    protected Object findValue(String expr, Class toType) {
+        if(this.altSyntax() && toType == String.class) {    // 若开启 altSyntax 进入 TextParseUtil.translateVariables，
+                                                            // 对表达式进行解析
+            return TextParseUtil.translateVariables('%', expr, this.stack);
+        } else {
+            if(this.altSyntax() && expr.startsWith("%{") && expr.endsWith("}")) {
+                expr = expr.substring(2, expr.length() - 1);
+            }
+
+            return this.getStack().findValue(expr, toType);
+        }
+    }
+
+继续跟进 TextParseUtil.translateVariables：
+
+    // xwork-2.0.1.jar!/com/opensymphony/xwork2/util/TextParseUtil.class
+    public static Object translateVariables(char open, String expression, ValueStack stack, Class asType, TextParseUtil.ParsedValueEvaluator evaluator) {
+        Object result = expression; // 表达式，%{name}
+
+        while(true) {
+            int start = expression.indexOf(open + "{");
+            int length = expression.length();
+            int x = start + 2;
+            int count = 1;
+            
+            // 匹配 %{key}
+            while(start != -1 && x < length && count != 0) {
+                char c = expression.charAt(x++);
+                if(c == 123) {
+                    ++count;
+                } else if(c == 125) {
+                    --count;
+                }
+            }
+
+            int end = x - 1;
+            if(start == -1 || end == -1 || count != 0) {
+                return XWorkConverter.getInstance().convertValue(stack.getContext(), result, asType);
+            }
+
+            // 提取表达式 %{name} => name
+            String var = expression.substring(start + 2, end);
+            Object o = stack.findValue(var, asType);    // 取得标签值 o
+                                                        // 进入 OGNL!
+            if(evaluator != null) {
+                o = evaluator.evaluate(o);
+            }
+
+            String left = expression.substring(0, start);
+            String right = expression.substring(end + 1);
+            // o 存在，这里为 Payload %{1+1}
+            // 递归解析表达式，也就是说最终 Payload 将变为 1+1，进入 OGNL 最终得以执行！
+            if(o != null) {
+                if(TextUtils.stringSet(left)) {
+                    result = left + o;
+                } else {
+                    result = o;
+                }
+
+                if(TextUtils.stringSet(right)) {
+                    result = result + right;
+                }
+
+                expression = left + o + right;
+            } else {
+                result = left + right;
+                expression = left + right;
+            }
+        }
+    }
+    
+至此，S2-001 的漏洞原理已经很清晰，Struts2 的 OGNL 解析函数递归解析，导致提交的恶意代码最终会作为 OGNL 语句得以执行：
+
+// Payload: username=%{1+1}
+// Payload for real world：%{@java.lang.Runtime@getRuntime().exec("/usr/bin/gnome-calculator")}
+%{name} => %{username} => %{1+1} => 2
+
+官方修复方案也是取消了递归解析：
+As of XWork 2.0.4, the OGNL parsing is changed so that it is not recursive. Therefore, in the example above, the result 
+will be the expected %{1+1}. You can either obtain the WebWork 2.0.4 or Struts 2.0.9, which contains the corrected XWork 
+library. Alternatively, you can obtain the patch and apply it to the XWork source code yourself.
+
