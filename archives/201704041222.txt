@@ -1,7 +1,7 @@
 - Title: 打造高速、全面的子域名爆破
 - Link: http://sh3ll.me/archives/201704041222.txt
 - Published: 2017-04-04 12:22
-- Updated: 2017-04-12 17:17
+- Updated: 2017-04-12 19:10
 
 GitHub：https://github.com/chuhades/dnsbrute
 
@@ -60,7 +60,7 @@ DNS 协议简单，查询流程简单，大部分语言库中也都有 DNS 查�
 
     // IsPanDNSRecord 是否为泛解析记录
     func IsPanDNSRecord(record string, ttl uint32) bool {
-        _ttl, ok := panAnalyticRecords[TrimSuffixPoint(record)]
+        _ttl, ok := panDNSRecords[TrimSuffixPoint(record)]
         // 若记录不存在于黑名单列表，不是泛解析
         // 若记录存在，且与黑名单中的 ttl 不等但都是 60（1min）的倍数，不是泛解析
         if !ok || (_ttl != ttl && _ttl%60 == 0 && ttl%60 == 0) {
