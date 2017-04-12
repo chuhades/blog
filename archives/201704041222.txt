@@ -1,0 +1,70 @@
+- Title: 打造高速、全面的子域名爆破
+- Link: http://sh3ll.me/archives/201704041222.txt
+- Published: 2017-04-04 12:22
+- Updated: 2017-04-12 17:17
+
+GitHub：https://github.com/chuhades/dnsbrute
+
+子域名爆破往往是渗透测试的第一步，是收集 IP 信息、脆弱点的前置条件。之前测试了目前社区中的子域名爆破软件，都不是很满意，
+主要问题可归结为：
+- 速度慢
+- 结果不全
+- 对泛解析的未做处理或处理方式过于粗暴
+
+1. 速度慢
+DNS 协议简单，查询流程简单，大部分语言库中也都有 DNS 查询相关的函数。而子域名爆破实际就是对每个子域名进行 DNS 查询，若
+存在相应解析记录则证明该子域名存在。伪代码如下：
+
+    with open("dict.txt") as fd:
+        for line in fd:
+            subdomain = line.strip() + "." + domain
+            client = dns.client(dns_server_addr)
+            record = client.recolve(subdomain)
+            if record:
+                log.info(subdomain, record)
+
+一般通过多线程/多进程的方式将查询并发进行，这样做存在的问题有：
+- 多线程/多进程并发的上限取决于系统的文件描述符的限制（linux 默认为 1024，可手动调整：ulimit -n），这使得实际网络 IO 速
+度远远小于上下行带带宽限制。
+- 每次查询都基于一个完整的 socket 连接，处理连接、等待 IO 造成了大量不必要的时间、性能开销。
+
+解决办法参考了 masscan/zmap 的无状态思路：对于每个 DNS socket 连接，开启两个协程：一个协程负责发送，另一个负责接收。伪代码：
+
+    client = dns.client(dns_server_addr)
+
+    go func(){
+        with open("dict.txt") as fd:
+            for line in fd:
+                subdomain = line.strip() + "." + domain
+                client.send(subdomain)
+                time.sleep(delay)
+    }()
+
+    while True:
+        record = client.recv()
+        if record.valid:
+            log.info(record)
+
+测试环境下开启 20 个 DNS socket 连接时，每秒可查询近 10000 域名，通过调整连接数与发送间隔，可打满上下行带宽。
+
+2. 结果不全
+单纯依赖字典必定会导致爆破结果不全，可以通过采集网上的一些域名接口，如 hackertarget.com、ptrarchive.com 等来丰富爆破结果。
+
+3. 泛解析
+泛解析一直都是域名爆破中的大问题，目前的解决思路是根据确切不存在的子域名记录（md5(domain).domain）获取黑名单 IP，对爆破
+过程的结果进行黑名单过滤。
+但这种宽泛的过滤很容易导致漏报，如泛解析记录为 1.1.1.1，但某存在子域名也指向 1.1.1.1，此时这个子域名变可能会被黑名单过
+滤掉。
+胖学弟提到，可以将 TTL 也作为黑名单规则的一部分，评判的依据是：在权威 DNS 中，泛解析记录的 TTL 肯定是相同的，如果子域名
+记录相同，但 TTL 不同，那这条记录可以说肯定不是泛解析记录。最终的判断代码如下：
+
+    // IsPanDNSRecord 是否为泛解析记录
+    func IsPanDNSRecord(record string, ttl uint32) bool {
+        _ttl, ok := panAnalyticRecords[TrimSuffixPoint(record)]
+        // 若记录不存在于黑名单列表，不是泛解析
+        // 若记录存在，且与黑名单中的 ttl 不等但都是 60（1min）的倍数，不是泛解析
+        if !ok || (_ttl != ttl && _ttl%60 == 0 && ttl%60 == 0) {
+            return false
+        }
+        return true
+    }
