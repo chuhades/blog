@@ -1,7 +1,7 @@
 - Title: 打造高速、全面的子域名爆破
 - Link: http://sh3ll.me/archives/201704041222.txt
 - Published: 2017-04-04 12:22
-- Updated: 2017-04-12 19:10
+- Updated: 2017-04-13 23:54
 
 GitHub：https://github.com/chuhades/dnsbrute
 
