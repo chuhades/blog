@@ -1,0 +1,50 @@
+- Title: Hopper v4 For Linux Crack
+- Link: http://sh3ll.me/archives/201706022230.txt
+- Published: 2017-06-02 22:30
+- Updated: 2017-06-02 22:30
+
+去官网看了下发现 Hopper v4 的 Linux 版本也可以下载了，下来试用了下。
+
+搜索字符串“Try the Demo”发现函数 ShowLicenseDialog（0x00000000004f9b30）中存在调用：
+
+    00000000004f9d87         mov        rbx, qword [r14+0x80] ; CODE XREF=ShowLicenseDialog+557, ShowLicenseDialog+577
+    00000000004f9d8e         lea        rsi, qword [_ZTSSt11_Mutex_baseILN9__gnu_cxx12_Lock_policyE2EE+2549] ; "LicenseDialog"
+    00000000004f9d95         lea        rdx, qword [_ZTSSt11_Mutex_baseILN9__gnu_cxx12_Lock_policyE2EE+3179] ; "Try the Demo"
+    00000000004f9d9c         lea        r15, qword [rsp+0x50+var_40]
+    00000000004f9da1         xor        ecx, ecx
+    00000000004f9da3         mov        r8d, 0xffffffff
+    00000000004f9da9         mov        rdi, r15
+    00000000004f9dac         call       j__ZN16QCoreApplication9translateEPKcS1_S1_i
+    
+gdb 调试，在该函数设置断点。启动后触发端点，回溯如下：
+
+    Breakpoint * 0x4f9b30
+    pwndbg> bt
+    #0  0x00000000004f9b30 in  ()
+    #1  0x00000000004f920c in  ()
+    #2  0x00000000004f46b2 in  ()
+    #3  0x00000000005f5101 in  ()
+    #4  0x00000000005fb35f in  ()
+    #5  0x0000000000549491 in  ()
+    #6  0x00007ffff515b159 in dispatch_main_queue_drain_np () at /opt/hopper-v4/lib/libdispatch.so.1
+    ...
+    
+中间几个是 Qt 的相关设置，最后定位到：
+
+    00000000005f50e9         call       CheckLicense                                ; CODE XREF=sub_5f5090+20, sub_5f5090+35
+    00000000005f50ee         test       al, al
+    00000000005f50f0         jne        loc_5f513c
+    00000000005f50f2         lea        rbx, qword [rsp+0x70+var_70]
+    00000000005f50f6         mov        rdi, rbx                                    ; argument #1 for method sub_4f4670
+    00000000005f50f9         mov        rsi, r15
+    00000000005f50fc         call       sub_4f4670
+    00000000005f5101         mov        rax, qword [rsp+0x70+var_70]
+    00000000005f5105         mov        rax, qword [rax+0x1a8]
+    
+0x00000000005f50fc 处的调用向上看，发现典型的 test/jne，确定 CheckLicense（0x00000000004f7660）就是真正的校验函数，
+patch 如下：
+
+    00000000004f7660         mov        eax, 0x1                                    ; CODE XREF=sub_5bd550+1013, sub_5f5090+89, sub_5f5090+129, sub_5f9760+15, sub_5f99a0+8, sub_5f9b00+8, sub_5f9c60+8
+    00000000004f7665         ret
+
+爆破大法好；）
