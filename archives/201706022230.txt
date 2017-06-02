@@ -3,7 +3,7 @@
 - Published: 2017-06-02 22:30
 - Updated: 2017-06-02 22:30
 
-去官网看了下发现 Hopper v4 的 Linux 版本也可以下载了，下来试用了下。
+去官网看了下发现 Hopper v4 的 Linux 版本也可以下载了，于是下载试用了下。
 
 搜索字符串“Try the Demo”发现函数 ShowLicenseDialog（0x00000000004f9b30）中存在调用：
 
