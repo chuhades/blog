@@ -1,7 +1,7 @@
 - Title: S2-001 调试分析
 - Link: http://sh3ll.me/archives/201703152213.txt
 - Published: 2017-03-15 22:13
-- Updated: 2017-03-15 22:13
+- Updated: 2017-06-08 16:15
 
 应用中的认证函数添加错误：ActionSupport.addFieldError：
 
@@ -16,20 +16,20 @@
 
 判断是否验证失败：
 
-            // xwork-2.0.1.jar!/com/opensymphony/xwork2/interceptor/DefaultWorkflowInterceptor.class：
-			... snip ...
-			// 是否验证失败
-            if(validationAwareAction1.hasErrors()) {
-                if(_log.isDebugEnabled()) {
-                    _log.debug("Errors on action " + validationAwareAction1 + ", returning result name \'input\'");
-                }
+    // xwork-2.0.1.jar!/com/opensymphony/xwork2/interceptor/DefaultWorkflowInterceptor.class
+    ... snip ...
+    // 是否验证失败
+    if(validationAwareAction1.hasErrors()) {
+        if(_log.isDebugEnabled()) {
+            _log.debug("Errors on action " + validationAwareAction1 + ", returning result name \'input\'");
+        }
 
-                return this.inputResultName;
-            }
+        return this.inputResultName;
+    }
 
 经过过滤器后进入到页面渲染，由外至内解析标签（form=>textfield=>submit）：
 
-    // struts2-core-2.0.6.jar!/org/apache/struts2/views/jsp/ComponentTagSupport.class：
+    // struts2-core-2.0.6.jar!/org/apache/struts2/views/jsp/ComponentTagSupport.class
     public int doEndTag() throws JspException {
         this.component.end(this.pageContext.getOut(), this.getBody());
         this.component = null;
@@ -47,7 +47,7 @@
 
 首先执行 doStartTag，标签闭合时执行 doEndTag，调试发现经过 doEndTag 后 Payload 得以执行，跟进之，随后跟进至 component.end：
 
-    // struts2-core-2.0.6.jar!/org/apache/struts2/components/UIBean.class：
+    // struts2-core-2.0.6.jar!/org/apache/struts2/components/UIBean.class
     public boolean end(Writer writer, String body) {
         this.evaluateParams();	// 遍历标签属性
 
@@ -101,7 +101,7 @@
 
 跟进 findValue：
 
-    // struts2-core-2.0.6.jar!/org/apache/struts2/components/Component.class：
+    // struts2-core-2.0.6.jar!/org/apache/struts2/components/Component.class
     protected Object findValue(String expr, Class toType) {
         if(this.altSyntax() && toType == String.class) {    // 若开启 altSyntax 进入 TextParseUtil.translateVariables，
                                                             // 对表达式进行解析
