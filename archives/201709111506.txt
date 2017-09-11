@@ -30,8 +30,8 @@ Python 中可以通过 unicodedata.decomposition 函数实现 Unicode 的分解�
 3. p41 window.open 打开新窗口的过程
 
 在 Chrome、Firefox 等浏览器中，使用 window.open() 方法打开一个新窗口时，无论第一个参数（strUrl）是什么，新开的窗口中的 URL 都不会立即
-加载，直到 `window.open()` 函数返回，新开的窗口地址都一直是 `about:blank`。直到当前 **代码块** 执行完成时，窗口才会导航到指定的 URL 上。
-而在 IE 浏览器中，新窗口刚刚创建，`window.open()` 返回的 window 对象为 null，页面开始加载时，源和传入的 strUrl 的源一致。
+加载，直到 window.open() 函数返回，新开的窗口地址都一直是 about:blank。直到当前 **代码块** 执行完成时，窗口才会导航到指定的 URL 上。
+而在 IE 浏览器中，新窗口刚刚创建，window.open() 返回的 window 对象为 null，页面开始加载时，源和传入的 strUrl 的源一致。
 
 4. p42 2345 浏览器伪协议逻辑出错导致 UXSS
 
