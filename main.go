@@ -47,7 +47,7 @@ func main() {
 	http.HandleFunc("/about", aboutHandler)
 	http.HandleFunc("/atom.xml", feedHandler)
 
-	panic(http.ListenAndServe(":80", nil))
+	panic(http.ListenAndServe(":8000", nil))
 }
 
 func indexHandler(w http.ResponseWriter, _ *http.Request) {
