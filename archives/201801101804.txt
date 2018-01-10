@@ -1,0 +1,4 @@
+- Title: CVE-2018-5318：D-Link soap.cgi Stack Buffer Overflow
+- Link: https://mp.weixin.qq.com/s/8C3jbfMy3sKCSdul4Y8Pcg
+- Published: 2018-01-10 18:04
+- Updated: 2018-01-10 18:04
