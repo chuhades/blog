@@ -3,7 +3,8 @@
 - Published: 2018-01-25 15:35
 - Updated: 2018-01-25 15:35
 
-自定义协议的相关问题其实比较古老了，08 年时就已经在 BH 上被提出来，最近因为 Electron 远程代码执行漏洞（CVE-2018-1000006）又一次被提起，借此机会刚好把之前学习的相关内容整理下，备忘。
+自定义协议的相关问题其实比较古老了，08 年时就已经在 BH 上被提出来，最近因为 Electron 远程代码执行漏洞（CVE-2018-1000006）
+又一次被提起，借此机会刚好把之前学习的相关内容整理下，备忘。
 
 1. 应用自定义协议（Custom URI Scheme）
 
@@ -23,7 +24,8 @@
 [HKEY_CLASSES_ROOT\Tim\shell\open\command]
 @="C:\\Program Files (x86)\\Tencent\\TIM\\Bin\\Timwp.exe \"%1\""
 
-此处注册的意义是当外部应用（浏览器、Windows Run…）调用到 tim 协议时会调用 C:\Program Files (x86)\Tencent\TIM\Bin\Timwp.exe 对输入进行处理，并将参数通过 “%1” 传递给程序。如，外部应用调用如下链接：
+此处注册的意义是当外部应用（浏览器、Windows Run…）调用到 tim 协议时会调用 C:\Program Files (x86)\Tencent\TIM\Bin\Timwp.exe 
+对输入进行处理，并将参数通过 “%1” 传递给程序。如，外部应用调用如下链接：
 
 tim://test
 
@@ -33,11 +35,14 @@ C:\Program Files (x86)\Tencent\TIM\Bin\Timwp.exe "test"
 
 2. 相关漏洞
 
-理解了什么是自定义协议再看相关漏洞就简单很多，其实就是一个能被其他应用调用的输入点，这里的其他应用包括但不限于浏览器（相对直接的利用方式）、快捷方式等。下面看几个比较典型的案例。
+理解了什么是自定义协议再看相关漏洞就简单很多，其实就是一个能被其他应用调用的输入点，这里的其他应用包括但不限于浏览器（
+相对直接的利用方式）、快捷方式等。下面看几个比较典型的案例。
 
 - 上古时期的 ShellExecute
 
-Windows XP 和 Windows 2003 安装 IE 7 后 ShellExecute 这个 API 进行了一些变动，具体表现为：当传递给 ShellExecute 的参数中包含“%”时，该函数会认为认为参数不正确，然后试图“修复”它，而这个“修复”会导致命令注入。更操蛋的是，自定义 URI 协议的调用底层实现也是 ShellExecute，也就是说任何注册了自定义协议的应用都可以被远程命令执行。
+Windows XP 和 Windows 2003 安装 IE 7 后 ShellExecute 这个 API 进行了一些变动，具体表现为：当传递给 ShellExecute 的参数
+中包含“%”时，该函数会认为认为参数不正确，然后试图“修复”它，而这个“修复”会导致命令注入。更操蛋的是，自定义 URI 协议的调
+用底层实现也是 ShellExecute，也就是说任何注册了自定义协议的应用都可以被远程命令执行。
 
 以 mailto 协议为例，调用如下链接：
 
@@ -53,7 +58,8 @@ ShellExecute("%../../../../windows/system32/calc.exe")
 
 - QQ 游戏命令注入
 
-redrain 之前 slide 中提到过一个 QQ 游戏的命令注入，其实是一个道理，具体可以直接看 http://www.hackdog.me/paper/Attack_Surface_Extended_by_URL_Schemes.pdf。
+redrain 之前 slide 中提到过一个 QQ 游戏的命令注入，其实是一个道理，具体可以直接看
+http://www.hackdog.me/paper/Attack_Surface_Extended_by_URL_Schemes.pdf。
 
 - 某下载软件缓冲区溢出
 
