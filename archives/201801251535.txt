@@ -33,6 +33,16 @@ tim://test
 
 C:\Program Files (x86)\Tencent\TIM\Bin\Timwp.exe "test"
 
+其中的“"”是可以通过注入“"”闭合的，如微软文档所言：
+
+Because Internet Explorer will decode all percent-encoded octets in the URI before passing the resulting string to ShellExecute, URIs such as alert:%3F? will be given to the alert application pluggable protocol handler as alert:??. The handler won't know that the first question mark was percent-encoded. To avoid this issue, pluggable protocol handlers and their associated URI scheme must not rely on encoding. If encoding is necessary, protocol handlers should use another type of encoding that is compatible with URI syntax, such as Base64 encoding. Double percent-encoding is not a good solution either; if the application protocol URI isn't processed by Internet Explorer, it will not be decoded.
+When ShellExecute executes the pluggable protocol handler with a stringon the command line, any non-encoded spaces, quotes, and backslashes in the URI will be interpreted as part of the command line. This means that if you use C/C++'s argc and argv to determine the arguments passed to your application, the string may be broken across multiple parameters. To mitigate this issue:
+- Avoid spaces, quotes, or backslashes in your URI
+- Quote the %1 in the registration ("%1" as written in the 'alert' example registration)
+However, avoidance doesn't completely solve the problem of quotes in the URI or a backslash at the end of the URI.
+
+也就是说可以通过注入“"”而引入任何参数，这便是 Electron 漏洞的原理。
+
 2. 相关漏洞
 
 理解了什么是自定义协议再看相关漏洞就简单很多，其实就是一个能被其他应用调用的输入点，这里的其他应用包括但不限于浏览器（
