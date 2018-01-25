@@ -58,8 +58,7 @@ ShellExecute("%../../../../windows/system32/calc.exe")
 
 - QQ 游戏命令注入
 
-redrain 之前 slide 中提到过一个 QQ 游戏的命令注入，其实是一个道理，具体可以直接看
-http://www.hackdog.me/paper/Attack_Surface_Extended_by_URL_Schemes.pdf。
+redrain 之前 slide 中提到过一个 QQ 游戏的命令注入，其实是一个道理，具体可以直接看 http://www.hackdog.me/paper/Attack_Surface_Extended_by_URL_Schemes.pdf。
 
 - 某下载软件缓冲区溢出
 
