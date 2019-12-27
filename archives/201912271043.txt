@@ -1,17 +1,17 @@
 - Title: Linux 共享库注入
 - Link: http://sh3ll.me/archives/201912271043.txt
 - Published: 2019-12-27 10:43
-- Updated: 2019-12-27 10:43
+- Updated: 2019-12-27 15:16
 
 读 《Learning Linux Binary Analysis》了解到的「老技术」，自己实践了下。
 
 整体思路：
 
 1. 查找 libc.so 加载基址
-2. 解析 libc.so 查找 __libc_dlopen_mode，获取地址
-3. 使用 ptrace 向目标进程写入需要注入的 so 的路径、调用 __libc_dlopen_mode 的 shellcode
-4. 设置参数，调用 shellcode
-5. 恢复进程状态
+2. 解析 libc.so 查找 __libc_dlopen_mode 地址
+3. 向目标进程写入需要注入的 so 的路径、调用 __libc_dlopen_mode 的 shellcode
+4. 设置参数，远程调用 shellcode
+5. 恢复目标进程
 
 具体实现见代码：
 
