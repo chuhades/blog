@@ -3,7 +3,7 @@
 - Published: 2019-12-27 10:43
 - Updated: 2019-12-27 15:16
 
-读 《Learning Linux Binary Analysis》了解到的「老技术」，自己实践了下。
+读《Learning Linux Binary Analysis》时了解到的「老技术」，自己实践了下。
 
 整体思路：
 
